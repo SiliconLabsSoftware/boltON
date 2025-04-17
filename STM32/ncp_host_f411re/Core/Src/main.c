@@ -310,66 +310,66 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 
 bool sl_check_for_valid_message_in_buf() {
-	uint32_t msg_length;
-	uint32_t header = 0;
-	int ret;
+  uint32_t msg_length;
+  uint32_t header = 0;
+  int ret;
 
-	// check if a whole message is present in the input buffer
-	// sync to a header start byte
-	ret = peek_rx_bytes(1, 0, (uint8_t*)&header);
-	// Failed to read header byte
-	if (ret < 0) {
+  // check if a whole message is present in the input buffer
+  // sync to a header start byte
+  ret = peek_rx_bytes(1, 0, (uint8_t*)&header);
+  // Failed to read header byte
+  if (ret < 0) {
     return false;
-	}
+  }
 
-	// check header start byte
-	// Check if it's a BT type event or response
-	if (((header & 0xf8) != ( (uint32_t)(sl_bgapi_dev_type_bt) | (uint32_t)sl_bgapi_msg_type_evt)) && ((header & 0xf8) != (uint32_t)(sl_bgapi_dev_type_bt))) {
-		// Consume the invalid header start byte
-		HAL_NVIC_DisableIRQ(USART1_IRQn);
-		memmove((void *)rx_buf, (void *)&rx_buf[1], rx_buf_len);
-		rx_buf_len--;
-		HAL_NVIC_EnableIRQ(USART1_IRQn);
-		return false;
-	}
-	// peek the full header
-	ret = peek_rx_bytes(SL_BGAPI_MSG_HEADER_LEN - 1, 1, &((uint8_t*)&header)[1]);
-	if (ret < 0) {
-		return 0;
-	}
-	// check payload length
-	msg_length = SL_BT_MSG_LEN(header);
-	if (msg_length > SL_BGAPI_MAX_PAYLOAD_SIZE) {
-		// Consume the header start byte to invalidate the message
-		//(void)sl_bt_api_input(1, (uint8_t*)&header);
-		return false;
-	}
-	// check if we have enough bytes buffered for the payload
-	uint32_t bytes_available = rx_buf_len;
-	uint32_t bytes_needed = SL_BGAPI_MSG_HEADER_LEN + msg_length;
-	if (bytes_available < bytes_needed) {
-		return false;
-	}
+  // check header start byte
+  // Check if it's a BT type event or response
+  if (((header & 0xf8) != ( (uint32_t)(sl_bgapi_dev_type_bt) | (uint32_t)sl_bgapi_msg_type_evt)) && ((header & 0xf8) != (uint32_t)(sl_bgapi_dev_type_bt))) {
+    // Consume the invalid header start byte
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
+    memmove((void *)rx_buf, (void *)&rx_buf[1], rx_buf_len);
+    rx_buf_len--;
+    HAL_NVIC_EnableIRQ(USART1_IRQn);
+    return false;
+  }
+  // peek the full header
+  ret = peek_rx_bytes(SL_BGAPI_MSG_HEADER_LEN - 1, 1, &((uint8_t*)&header)[1]);
+  if (ret < 0) {
+    return 0;
+  }
+  // check payload length
+  msg_length = SL_BT_MSG_LEN(header);
+  if (msg_length > SL_BGAPI_MAX_PAYLOAD_SIZE) {
+    // Consume the header start byte to invalidate the message
+    //(void)sl_bt_api_input(1, (uint8_t*)&header);
+    return false;
+  }
+  // check if we have enough bytes buffered for the payload
+  uint32_t bytes_available = rx_buf_len;
+  uint32_t bytes_needed = SL_BGAPI_MSG_HEADER_LEN + msg_length;
+  if (bytes_available < bytes_needed) {
+    return false;
+  }
 
-	memcpy((void *)&rx_buf_out[rx_buf_out_len], rx_buf, rx_buf_len);
-	rx_buf_out_len += rx_buf_len;
-	rx_buf_len = 0u;
-	return true;
+  memcpy((void *)&rx_buf_out[rx_buf_out_len], rx_buf, rx_buf_len);
+  rx_buf_out_len += rx_buf_len;
+  rx_buf_len = 0u;
+  return true;
 }
 
 // Gets bytes from the Rx buffer without consuming them
 int32_t peek_rx_bytes(uint32_t dataLength, uint32_t offset, uint8_t* data)
 {
-	if (!data) {
-		return -1;
-	}
+  if (!data) {
+    return -1;
+  }
 
-	if (dataLength + offset <= rx_buf_len) {
-		memcpy((void *)data, (void *)rx_buf + offset, (size_t)dataLength);
-	} else {
-		dataLength = -1;
-	}
-	return dataLength;
+  if (dataLength + offset <= rx_buf_len) {
+    memcpy((void *)data, (void *)rx_buf + offset, (size_t)dataLength);
+  } else {
+    dataLength = -1;
+  }
+  return dataLength;
 }
 
 // Receive function exposed to BGAPI
@@ -403,8 +403,8 @@ void sl_bt_api_tx(uint32_t msg_len, uint8_t* msg_data)
 // Returns the number of received bytes in the Rx buffer
 int32_t sl_bt_api_peek_rx()
 {
-	sl_check_for_valid_message_in_buf();
-	return rx_buf_out_len;
+  sl_check_for_valid_message_in_buf();
+  return rx_buf_out_len;
 }
 
 // printf
