@@ -1,4 +1,5 @@
 "./Core/Src/main.o"
+"./Core/Src/sl_boltON.o"
 "./Core/Src/sl_bt_ncp_host.o"
 "./Core/Src/sl_bt_ncp_host_api.o"
 "./Core/Src/stm32f4xx_hal_msp.o"
