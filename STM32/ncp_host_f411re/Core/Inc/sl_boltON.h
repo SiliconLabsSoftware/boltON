@@ -35,6 +35,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define BOLTON_UART_INSATNCE    USART1
+#define BOLTON_UART_HANDLE      huart1
+#define BOLTON_UART_IRQN        USART1_IRQn
+
 // Receive function exposed to BGAPI
 int32_t sl_bt_api_rx(uint32_t dataLength, uint8_t* data);
 

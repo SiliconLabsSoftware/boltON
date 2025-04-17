@@ -40,6 +40,9 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+#define LED_PORT  GPIOA
+#define LED_PIN   GPIO_PIN_5
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -275,10 +278,10 @@ static void MX_GPIO_Init(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (huart->Instance == USART1) {
+  if (huart->Instance == BOLTON_UART_INSATNCE) {
     sl_buffer_received_data(1, &usart_rx_byte);
     // Restart reception
-    HAL_UART_Receive_IT(&huart1, &usart_rx_byte, 1);
+    HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &usart_rx_byte, 1);
   }
 }
 
@@ -362,14 +365,14 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     // This event indicates that a new connection was opened
     case sl_bt_evt_connection_opened_id:
       printf("Connection opened\n");
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
       break;
 
     // -------------------------------
     // This event indicates that a connection was closed
     case sl_bt_evt_connection_closed_id:
       printf("Connection closed\n");
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
       // Generate data for advertising
       sc = sl_bt_legacy_advertiser_generate_data(advertising_set_handle,
                                                  sl_bt_advertiser_general_discoverable);

@@ -33,7 +33,7 @@
 #include "sl_bt_ncp_host.h"
 #include "main.h"
 
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef BOLTON_UART_HANDLE;
 
 // Checks if we have valid data in the incoming buffer
 // If yes this function will copy it into the BGAPI buffer
@@ -71,7 +71,7 @@ int32_t sl_bt_api_rx(uint32_t dataLength, uint8_t* data)
 
 void sl_bt_api_tx(uint32_t msg_len, uint8_t* msg_data)
 {
-  HAL_UART_Transmit(&huart1, msg_data, msg_len, HAL_MAX_DELAY);
+  HAL_UART_Transmit(&BOLTON_UART_HANDLE, msg_data, msg_len, HAL_MAX_DELAY);
 }
 
 int32_t sl_bt_api_peek_rx()
@@ -108,10 +108,10 @@ static bool sl_check_for_valid_message_in_buf() {
   // Check if it's a BT type event or response
   if (((header & 0xf8) != ( (uint32_t)(sl_bgapi_dev_type_bt) | (uint32_t)sl_bgapi_msg_type_evt)) && ((header & 0xf8) != (uint32_t)(sl_bgapi_dev_type_bt))) {
     // Consume the invalid header start byte
-    HAL_NVIC_DisableIRQ(USART1_IRQn);
+    HAL_NVIC_DisableIRQ(BOLTON_UART_IRQN);
     memmove((void *)rx_buf, (void *)&rx_buf[1], rx_buf_len);
     rx_buf_len--;
-    HAL_NVIC_EnableIRQ(USART1_IRQn);
+    HAL_NVIC_EnableIRQ(BOLTON_UART_IRQN);
     return false;
   }
   // peek the full header
