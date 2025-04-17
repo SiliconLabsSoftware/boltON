@@ -316,7 +316,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 
       // Extract unique ID from BT Address
       sc = sl_bt_gap_get_identity_address(&address, &address_type);
-      //app_assert_status(sc);
+      assert(sc == SL_STATUS_OK);
 
       // Pad and reverse unique ID to get System ID
       system_id[0] = address.addr[5];
@@ -336,12 +336,12 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 
       // Create an advertising set
       sc = sl_bt_advertiser_create_set(&advertising_set_handle);
-      //app_assert_status(sc);
+      assert(sc == SL_STATUS_OK);
 
       // Generate data for advertising
       sc = sl_bt_legacy_advertiser_generate_data(advertising_set_handle,
                                                  sl_bt_advertiser_general_discoverable);
-      //app_assert_status(sc);
+      assert(sc == SL_STATUS_OK);
 
       // Set advertising interval to 100ms
       sc = sl_bt_advertiser_set_timing(
@@ -350,11 +350,11 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
         160, // max. adv. interval (milliseconds * 1.6)
         0,   // adv. duration
         0);  // max. num. adv. events
-      //app_assert_status(sc);
+      assert(sc == SL_STATUS_OK);
       // Start advertising and enable connections
       sc = sl_bt_legacy_advertiser_start(advertising_set_handle,
                                          sl_bt_legacy_advertiser_connectable);
-      //app_assert_status(sc);
+      assert(sc == SL_STATUS_OK);
       printf("Started advertising...\n");
       break;
 
@@ -373,12 +373,12 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       // Generate data for advertising
       sc = sl_bt_legacy_advertiser_generate_data(advertising_set_handle,
                                                  sl_bt_advertiser_general_discoverable);
-      //app_assert_status(sc);
+      assert(sc == SL_STATUS_OK);
 
       // Restart advertising after client has disconnected
       sc = sl_bt_legacy_advertiser_start(advertising_set_handle,
                                          sl_bt_legacy_advertiser_connectable);
-      //app_assert_status(sc);
+      assert(sc == SL_STATUS_OK);
       printf("Restarted advertising...\n");
       break;
 
@@ -406,7 +406,7 @@ static void ble_initialize_gatt_db()
   (void)sc;
   // Create a new GATT database
   sc = sl_bt_gattdb_new_session(&gattdb_session_id);
-  //app_assert_status(sc);
+  assert(sc == SL_STATUS_OK);
 
   // Add the Generic Access service to the GATT DB
   const uint8_t generic_access_service_uuid[] = { 0x00, 0x18 };
@@ -416,7 +416,7 @@ static void ble_initialize_gatt_db()
                                 sizeof(generic_access_service_uuid),
                                 generic_access_service_uuid,
                                 &service_handle);
-  //app_assert_status(sc);
+  assert(sc == SL_STATUS_OK);
 
   // Add the Device Name characteristic to the Generic Access service
   // The value of the Device Name characteristic will be advertised
@@ -432,15 +432,15 @@ static void ble_initialize_gatt_db()
                                               sizeof(advertised_name) - 1,
                                               advertised_name,
                                               &characteristic_handle);
-  //app_assert_status(sc);
+  assert(sc == SL_STATUS_OK);
 
   // Start the Generic Access service
   sc = sl_bt_gattdb_start_service(gattdb_session_id, service_handle);
-  //app_assert_status(sc);
+  assert(sc == SL_STATUS_OK);
 
   // Commit the GATT DB changes
   sc = sl_bt_gattdb_commit(gattdb_session_id);
-  //app_assert_status(sc);
+  assert(sc == SL_STATUS_OK);
 }
 
 /* USER CODE END 4 */
