@@ -1,3 +1,4 @@
 .DS_Store
 STM32/ncp_host_f411re/Debug/*
 STM32/ble_blinky_f411re/Debug/*
+STM32/ncp_commander_f411re/Debug/*
