@@ -63,58 +63,45 @@ static void MX_USART1_UART_Init(void);
 
 void sl_bt_on_event(sl_bt_msg_t *evt);
 static void ble_initialize_gatt_db();
+uint8_t advertising_set_handle = SL_BT_INVALID_ADVERTISING_SET_HANDLE;
 
-uint8_t usart_rx_byte;
+uint8_t usart1_rx_byte;
 uint8_t usart2_rx_byte;
+RingBuffer uart2_rx_buf = { 0 };
 
-/* Set here the operation mode of the SPP device: */
-#define SPP_SERVER_MODE    0
-#define SPP_CLIENT_MODE    1
+typedef enum {
+  STATE_DISCONNECTED = 0,
+  STATE_ADVERTISING,
+  STATE_CONNECTED,
+  STATE_SPP_MODE
+} spp_state_t;
+spp_state_t spp_main_state = STATE_DISCONNECTED;
 
-#define SPP_OPERATION_MODE SPP_SERVER_MODE
+uint16_t spp_local_gatt_service_handle = 0u;
+uint16_t spp_local_data_gatt_characteristic_handle = 0u;
+uint8_t spp_connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
+const uint8_t spp_default_max_packet_size = 20u;
+uint8_t spp_max_packet_size = spp_default_max_packet_size;
 
-/*Main states */
-#define DISCONNECTED       0
-#define SCANNING           1
-#define FIND_SERVICE       2
-#define FIND_CHAR          3
-#define ENABLE_NOTIF       4
-#define DATA_MODE          5
-#define DISCONNECTING      6
-
-#define STATE_ADVERTISING  1
-#define STATE_CONNECTED    2
-#define STATE_SPP_MODE     3
-
-uint16_t local_spp_gatt_service_handle;
-uint16_t local_spp_data_gatt_characteristic_handle;
-uint8_t spp_main_state = DISCONNECTED;
-uint8_t spp_connection_handle = 0xff;
-
-// Default maximum packet size is 20 bytes.
-// This is adjusted after connection is opened based on the connection parameters.
-static uint8_t max_spp_packet_size = 20;
-static uint8_t min_spp_packet_size = 20;
-
-static RingBuffer uart2_rx_buf = { 0 };
-
-/* Bookkeeping struct for storing amount of received/sent data  */
+// Bookkeeping struct for storing amount of sent/received data
 typedef struct {
   uint32_t num_pack_sent;
   uint32_t num_bytes_sent;
   uint32_t num_pack_received;
   uint32_t num_bytes_received;
-  uint32_t num_writes; /* Total number of send attempts */
-} ts_counters;
+} spp_ts_counters;
+spp_ts_counters spp_connection_stat_counter = {};
 
-ts_counters counters = {};
+static void spp_write(uint8_t* data, size_t size);
+static void spp_print_stats(spp_ts_counters *p_counters);
+static void spp_reset_state();
 
-// SPP service UUID: 4880c12c-fdcb-4077-8920-a450d7f9b907
+// SPP GATT service UUID: 4880c12c-fdcb-4077-8920-a450d7f9b907
 const uuid_128 spp_service_uuid = {
   .data = { 0x07, 0xb9, 0xf9, 0xd7, 0x50, 0xa4, 0x20, 0x89, 0x77, 0x40, 0xcb, 0xfd, 0x2c, 0xc1, 0x80, 0x48 }
 };
 
-// SPP data UUID: fec26ec4-6d71-4442-9f81-55bc21d658d6
+// SPP data GATT characteristic UUID: fec26ec4-6d71-4442-9f81-55bc21d658d6
 const uuid_128 spp_data_characteristic_uuid = {
   .data = { 0xd6, 0x58, 0xd6, 0x21, 0xbc, 0x55, 0x81, 0x9f, 0x42, 0x44, 0x71, 0x6d, 0xc4, 0x6e, 0xc2, 0xfe }
 };
@@ -158,12 +145,12 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  printf("boltON SPP by Silicon Labs\n");
-  HAL_UART_Receive_IT(&huart1, &usart_rx_byte, 1);
+  printf("boltON BLE Serial Port Profile by Silicon Labs\n");
+  HAL_UART_Receive_IT(&huart1, &usart1_rx_byte, 1);
   HAL_UART_Receive_IT(&huart2, &usart2_rx_byte, 1);
   printf("Initializing BLE...\n");
   sl_status_t sc = sl_bt_api_initialize_nonblock(sl_bt_api_tx, sl_bt_api_rx, sl_bt_api_peek_rx);
-  (void)sc;
+  assert(sc == SL_STATUS_OK);
 
   // Reset the BLE board
   sl_bt_system_reboot();
@@ -173,9 +160,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  uint8_t data;
-  uint8_t data_buf[256];
-  uint16_t data_buf_idx = 0u;
   while (1) {
     /* USER CODE END WHILE */
 
@@ -187,17 +171,17 @@ int main(void)
       sl_bt_on_event(&event);
     }
 
-    // Handle BLE transmission of the UART received data
-    while (RingBuffer_Read(&uart2_rx_buf, &data)) {
+    // Handle BLE transmission of the data received from UART
+    uint8_t data;
+    static uint8_t data_buf[256];
+    static uint16_t data_buf_idx = 0u;
+    while (sl_ringbuffer_read(&uart2_rx_buf, &data)) {
       // Buffer the received data
       data_buf[data_buf_idx] = data;
       data_buf_idx++;
       // If it's the end of a line - or we reach the max allowed packet size - or we would overrun our buffer - send the data out
-      if (data == '\n' || data_buf_idx >= max_spp_packet_size || data_buf_idx >= sizeof(data_buf)) {
-        (void)sl_bt_gatt_server_send_notification(spp_connection_handle,
-                                                  local_spp_data_gatt_characteristic_handle,
-                                                  data_buf_idx,
-                                                  data_buf);
+      if (data == '\n' || data_buf_idx >= spp_max_packet_size || data_buf_idx >= sizeof(data_buf)) {
+        spp_write(data_buf, data_buf_idx);
         data_buf_idx = 0u;
       }
     }
@@ -350,16 +334,15 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+// UART ISR handler
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == BOLTON_UART_INSATNCE) {
-    sl_buffer_received_data(1, &usart_rx_byte);
-    // Restart reception
-    HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &usart_rx_byte, 1);
+    sl_buffer_received_data(1, &usart1_rx_byte);
+    HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &usart1_rx_byte, 1);
   }
   if (huart->Instance == USART2) {
-    RingBuffer_Write(&uart2_rx_buf, usart2_rx_byte);
-    // Restart reception
+    sl_ringbuffer_write(&uart2_rx_buf, usart2_rx_byte);
     HAL_UART_Receive_IT(&huart2, &usart2_rx_byte, 1);
   }
 }
@@ -371,19 +354,39 @@ int _write(int file, char *data, int len)
   return len;
 }
 
-static void reset_spp_state()
+static void spp_write(uint8_t* data, size_t size)
 {
-  spp_connection_handle = 0xFF;
-  spp_main_state = STATE_ADVERTISING;
-  local_spp_gatt_service_handle = 0;
-  local_spp_data_gatt_characteristic_handle = 0;
-  //max_packet_size = 20;
-
-  memset(&counters, 0, sizeof(counters));
+  if (spp_main_state != STATE_SPP_MODE) {
+    printf("Write error - SPP not connected\r\n");
+    return;
+  }
+  sl_status_t sc = sl_bt_gatt_server_send_notification(spp_connection_handle,
+                                                       spp_local_data_gatt_characteristic_handle,
+                                                       size,
+                                                       data);
+  if (sc == SL_STATUS_OK) {
+    spp_connection_stat_counter.num_pack_sent++;
+    spp_connection_stat_counter.num_bytes_sent += size;
+  }
 }
 
-// The advertising set handle allocated by the Bluetooth stack
-static uint8_t advertising_set_handle = 0xff;
+static void spp_reset_state()
+{
+  spp_connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
+  spp_main_state = STATE_ADVERTISING;
+  spp_max_packet_size = spp_default_max_packet_size;
+  memset(&spp_connection_stat_counter, 0u, sizeof(spp_ts_counters));
+}
+
+static void spp_print_stats(spp_ts_counters *p_counters)
+{
+  printf("Bytes sent: %lu (%lu packets)\r\n",
+         p_counters->num_bytes_sent,
+         p_counters->num_pack_sent);
+  printf("Bytes received: %lu (%lu packets)\r\n",
+         p_counters->num_bytes_received,
+         p_counters->num_pack_received);
+}
 
 /**************************************************************************//**
  * Bluetooth stack event handler
@@ -403,7 +406,6 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     // This event indicates the device has started and the radio is ready.
     // Do not call any stack command before receiving this boot event!
     case sl_bt_evt_system_boot_id:
-
       printf("BLE stack booted\n");
       ble_initialize_gatt_db();
 
@@ -449,6 +451,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
                                          sl_bt_legacy_advertiser_connectable);
       assert(sc == SL_STATUS_OK);
       printf("Started advertising...\n");
+      printf("Go to 'https://siliconlabssoftware.github.io/web-bluetooth-spp-application/' to connect your computer\n");
       break;
 
     // -------------------------------
@@ -457,21 +460,22 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       printf("Connection opened\n");
       spp_main_state = STATE_CONNECTED;
       spp_connection_handle = evt->data.evt_connection_opened.connection;
-      HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
       break;
 
     // -------------------------------
     // This event indicates that a connection was closed
     case sl_bt_evt_connection_closed_id:
+      printf("---------------------------\r\n");
       printf("Connection closed\n");
-      reset_spp_state();
+      spp_print_stats(&spp_connection_stat_counter);
+      spp_reset_state();
       HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
       // Generate data for advertising
       sc = sl_bt_legacy_advertiser_generate_data(advertising_set_handle,
                                                  sl_bt_advertiser_general_discoverable);
       assert(sc == SL_STATUS_OK);
 
-      // Restart advertising after client has disconnected
+      // Restart advertising after the client has disconnected
       sc = sl_bt_legacy_advertiser_start(advertising_set_handle,
                                          sl_bt_legacy_advertiser_connectable);
       assert(sc == SL_STATUS_OK);
@@ -480,11 +484,8 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 
     case sl_bt_evt_gatt_mtu_exchanged_id:
       // Calculate maximum data per one notification / write-without-response,
-      // this depends on the MTU. up to ATT_MTU-3 bytes can be sent at once.
-      max_spp_packet_size = evt->data.evt_gatt_mtu_exchanged.mtu - 3;
-
-      /* Try to send maximum length packets whenever possible */
-      min_spp_packet_size = max_spp_packet_size;
+      // this depends on the MTU. Up to ATT_MTU-3 bytes can be sent at once.
+      spp_max_packet_size = evt->data.evt_gatt_mtu_exchanged.mtu - 3;
       printf("MTU exchanged, max packet size set to: %d bytes\r\n", evt->data.evt_gatt_mtu_exchanged.mtu);
       break;
 
@@ -492,16 +493,18 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     {
       sl_bt_evt_gatt_server_characteristic_status_t char_status;
       char_status = evt->data.evt_gatt_server_characteristic_status;
-
-      if (char_status.characteristic == local_spp_data_gatt_characteristic_handle) {
+      if (char_status.characteristic == spp_local_data_gatt_characteristic_handle) {
         if (char_status.status_flags == sl_bt_gatt_server_client_config) {
           // Characteristic client configuration (CCC) for spp_data has been changed
           if (char_status.client_config_flags == sl_bt_gatt_server_notification) {
             spp_main_state = STATE_SPP_MODE;
-            printf("SPP Mode ON\r\n");
+            printf("Ready for SPP communication\r\n");
+            printf("---------------------------\r\n");
+            HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
           } else {
-            printf("SPP Mode OFF\r\n");
+            printf("SPP communication stopped\r\n");
             spp_main_state = STATE_CONNECTED;
+            HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
           }
         }
       }
@@ -510,12 +513,13 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 
     case sl_bt_evt_gatt_server_attribute_value_id:
     {
-      if (evt->data.evt_gatt_server_attribute_value.value.len != 0) {
-        for (uint8_t i = 0; i < evt->data.evt_gatt_server_attribute_value.value.len; i++) {
-          printf("%c", evt->data.evt_gatt_server_attribute_value.value.data[i]);
+      if (evt->data.evt_gatt_server_attribute_value.value.len != 0u) {
+        for (uint8_t i = 0u; i < evt->data.evt_gatt_server_attribute_value.value.len; i++) {
+          uint8_t received_char = evt->data.evt_gatt_server_attribute_value.value.data[i];
+          printf("%c", received_char);
         }
-        counters.num_pack_received++;
-        counters.num_bytes_received += evt->data.evt_gatt_server_attribute_value.value.len;
+        spp_connection_stat_counter.num_pack_received++;
+        spp_connection_stat_counter.num_bytes_received += evt->data.evt_gatt_server_attribute_value.value.len;
       }
     }
     break;
@@ -578,13 +582,13 @@ static void ble_initialize_gatt_db()
                                 SL_BT_GATTDB_ADVERTISED_SERVICE,
                                 sizeof(spp_service_uuid),
                                 spp_service_uuid.data,
-                                &local_spp_gatt_service_handle);
+                                &spp_local_gatt_service_handle);
   assert(sc == SL_STATUS_OK);
 
   // Add the 'SPP data' characteristic to the SPP service
   uint8_t spp_data_char_init_value = 0;
   sc = sl_bt_gattdb_add_uuid128_characteristic(gattdb_session_id,
-                                               local_spp_gatt_service_handle,
+                                               spp_local_gatt_service_handle,
                                                SL_BT_GATTDB_CHARACTERISTIC_WRITE_NO_RESPONSE | SL_BT_GATTDB_CHARACTERISTIC_NOTIFY,
                                                0x00,
                                                0x00,
@@ -593,11 +597,11 @@ static void ble_initialize_gatt_db()
                                                250,                                  // max length
                                                sizeof(spp_data_char_init_value),     // initial value length
                                                &spp_data_char_init_value,            // initial value
-                                               &local_spp_data_gatt_characteristic_handle);
+                                               &spp_local_data_gatt_characteristic_handle);
   assert(sc == SL_STATUS_OK);
 
   // Start the SPP service
-  sc = sl_bt_gattdb_start_service(gattdb_session_id, local_spp_gatt_service_handle);
+  sc = sl_bt_gattdb_start_service(gattdb_session_id, spp_local_gatt_service_handle);
   assert(sc == SL_STATUS_OK);
 
   // Commit the GATT DB changes

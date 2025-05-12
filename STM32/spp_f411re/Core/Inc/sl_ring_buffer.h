@@ -39,5 +39,5 @@ typedef struct {
   volatile uint16_t tail;
 } RingBuffer;
 
-void RingBuffer_Write(RingBuffer* rb, uint8_t data);
-int RingBuffer_Read(RingBuffer* rb, uint8_t* data);
+void sl_ringbuffer_write(RingBuffer* rb, uint8_t data);
+int sl_ringbuffer_read(RingBuffer* rb, uint8_t* data);
