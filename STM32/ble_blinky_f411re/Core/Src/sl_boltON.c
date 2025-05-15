@@ -80,7 +80,7 @@ int32_t sl_bt_api_peek_rx()
   return rx_buf_out_len;
 }
 
-void sl_buffer_received_data(const uint32_t len, const uint8_t *data)
+void sl_bolton_buffer_received_data(const uint32_t len, const uint8_t *data)
 {
   if (!data) {
     return;
@@ -91,7 +91,8 @@ void sl_buffer_received_data(const uint32_t len, const uint8_t *data)
   }
 }
 
-static bool sl_check_for_valid_message_in_buf() {
+static bool sl_check_for_valid_message_in_buf()
+{
   uint32_t msg_length;
   uint32_t header = 0;
   int ret;

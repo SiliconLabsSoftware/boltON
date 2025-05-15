@@ -49,6 +49,14 @@
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
+// The advertising set handle allocated by the Bluetooth stack
+static uint8_t advertising_set_handle = 0xff;
+
+static const uint8_t advertised_name[] = "boltON STM32";
+static uint16_t gattdb_session_id;
+static uint16_t generic_access_service_handle;
+static uint16_t device_name_characteristic_handle;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -103,13 +111,11 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
   printf("boltON by Silicon Labs\n");
   HAL_UART_Receive_IT(&huart1, &usart_rx_byte, 1);
   printf("Initializing BLE...\n");
   sl_status_t sc = sl_bt_api_initialize_nonblock(sl_bt_api_tx, sl_bt_api_rx, sl_bt_api_peek_rx);
-  (void)sc;
-
+  assert(sc == SL_STATUS_OK);
   // Reset the BLE board
   sl_bt_system_reboot();
 
@@ -279,7 +285,7 @@ static void MX_GPIO_Init(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == BOLTON_UART_INSATNCE) {
-    sl_buffer_received_data(1, &usart_rx_byte);
+    sl_bolton_buffer_received_data(1, &usart_rx_byte);
     // Restart reception
     HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &usart_rx_byte, 1);
   }
@@ -292,9 +298,6 @@ int _write(int file, char *data, int len)
   return len;
 }
 
-// The advertising set handle allocated by the Bluetooth stack
-static uint8_t advertising_set_handle = 0xff;
-
 /**************************************************************************//**
  * Bluetooth stack event handler
  * This overrides the default weak implementation
@@ -304,16 +307,16 @@ static uint8_t advertising_set_handle = 0xff;
 void sl_bt_on_event(sl_bt_msg_t *evt)
 {
   sl_status_t sc;
-  bd_addr address;
-  uint8_t address_type;
-  uint8_t system_id[8];
 
   switch (SL_BT_MSG_ID(evt->header)) {
     // -------------------------------
     // This event indicates the device has started and the radio is ready.
     // Do not call any stack command before receiving this boot event!
     case sl_bt_evt_system_boot_id:
-
+    {
+      bd_addr address;
+      uint8_t address_type;
+      uint8_t system_id[8];
       printf("BLE stack booted\n");
       ble_initialize_gatt_db();
 
@@ -328,7 +331,6 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       system_id[3] = address.addr[2];
       system_id[4] = address.addr[1];
       system_id[5] = address.addr[0];
-      (void)system_id;
       printf("System identity address: %02x:%02x:%02x:%02x:%02x:%02x\n",
              system_id[0],
              system_id[1],
@@ -359,7 +361,8 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
                                          sl_bt_legacy_advertiser_connectable);
       assert(sc == SL_STATUS_OK);
       printf("Started advertising...\n");
-      break;
+    }
+    break;
 
     // -------------------------------
     // This event indicates that a new connection was opened
@@ -395,18 +398,11 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       printf("BLE event: 0x%lx\n", SL_BT_MSG_ID(evt->header));
       break;
   }
-  (void)sc;
 }
-
-static const uint8_t advertised_name[] = "boltON STM32";
-static uint16_t gattdb_session_id;
-static uint16_t service_handle;
-static uint16_t characteristic_handle;
 
 static void ble_initialize_gatt_db()
 {
   sl_status_t sc;
-  (void)sc;
   // Create a new GATT database
   sc = sl_bt_gattdb_new_session(&gattdb_session_id);
   assert(sc == SL_STATUS_OK);
@@ -418,14 +414,14 @@ static void ble_initialize_gatt_db()
                                 SL_BT_GATTDB_ADVERTISED_SERVICE,
                                 sizeof(generic_access_service_uuid),
                                 generic_access_service_uuid,
-                                &service_handle);
+                                &generic_access_service_handle);
   assert(sc == SL_STATUS_OK);
 
   // Add the Device Name characteristic to the Generic Access service
   // The value of the Device Name characteristic will be advertised
   const sl_bt_uuid_16_t device_name_characteristic_uuid = { .data = { 0x00, 0x2A } };
   sc = sl_bt_gattdb_add_uuid16_characteristic(gattdb_session_id,
-                                              service_handle,
+                                              generic_access_service_handle,
                                               SL_BT_GATTDB_CHARACTERISTIC_READ,
                                               0x00,
                                               0x00,
@@ -434,11 +430,11 @@ static void ble_initialize_gatt_db()
                                               sizeof(advertised_name) - 1,
                                               sizeof(advertised_name) - 1,
                                               advertised_name,
-                                              &characteristic_handle);
+                                              &device_name_characteristic_handle);
   assert(sc == SL_STATUS_OK);
 
   // Start the Generic Access service
-  sc = sl_bt_gattdb_start_service(gattdb_session_id, service_handle);
+  sc = sl_bt_gattdb_start_service(gattdb_session_id, generic_access_service_handle);
   assert(sc == SL_STATUS_OK);
 
   // Commit the GATT DB changes

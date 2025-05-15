@@ -80,7 +80,7 @@ int32_t sl_bt_api_peek_rx()
   return rx_buf_out_len;
 }
 
-void sl_buffer_received_data(const uint32_t len, const uint8_t *data)
+void sl_bolton_buffer_received_data(const uint32_t len, const uint8_t *data)
 {
   if (!data) {
     return;

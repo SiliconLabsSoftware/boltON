@@ -144,14 +144,12 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
   printf("boltON BLE Serial Port Profile by Silicon Labs\n");
   HAL_UART_Receive_IT(&huart1, &usart1_rx_byte, 1);
   HAL_UART_Receive_IT(&huart2, &usart2_rx_byte, 1);
   printf("Initializing BLE...\n");
   sl_status_t sc = sl_bt_api_initialize_nonblock(sl_bt_api_tx, sl_bt_api_rx, sl_bt_api_peek_rx);
   assert(sc == SL_STATUS_OK);
-
   // Reset the BLE board
   sl_bt_system_reboot();
 
@@ -338,7 +336,7 @@ static void MX_GPIO_Init(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == BOLTON_UART_INSATNCE) {
-    sl_buffer_received_data(1, &usart1_rx_byte);
+    sl_bolton_buffer_received_data(1, &usart1_rx_byte);
     HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &usart1_rx_byte, 1);
   }
   if (huart->Instance == USART2) {

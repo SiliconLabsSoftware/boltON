@@ -50,6 +50,6 @@ void sl_bt_api_tx(uint32_t msg_len, uint8_t* msg_data);
 int32_t sl_bt_api_peek_rx();
 
 // Stores the bytes receive on UART in an internal buffer
-void sl_buffer_received_data(const uint32_t len, const uint8_t *data);
+void sl_bolton_buffer_received_data(const uint32_t len, const uint8_t *data);
 
 #endif // SL_BOLTON_H
