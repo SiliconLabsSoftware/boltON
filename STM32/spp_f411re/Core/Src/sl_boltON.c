@@ -34,6 +34,7 @@
 #include "main.h"
 
 extern UART_HandleTypeDef BOLTON_UART_HANDLE;
+uint8_t bolton_usart_rx_byte;
 
 // Checks if we have valid data in the incoming buffer
 // If yes this function will copy it into the BGAPI buffer
@@ -78,6 +79,26 @@ int32_t sl_bt_api_peek_rx()
 {
   sl_check_for_valid_message_in_buf();
   return rx_buf_out_len;
+}
+
+bool sl_bolton_init()
+{
+  HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &bolton_usart_rx_byte, 1);
+  sl_status_t sc = sl_bt_api_initialize_nonblock(sl_bt_api_tx, sl_bt_api_rx, sl_bt_api_peek_rx);
+  if (sc == SL_STATUS_OK) {
+    // Reset the BLE board
+    sl_bt_system_reboot();
+    return true;
+  }
+  return false;
+}
+
+void sl_bolton_process()
+{
+  sl_bt_msg_t event;
+  if (sl_bt_pop_event(&event) == SL_STATUS_OK) {
+    sl_bt_on_event(&event);
+  }
 }
 
 void sl_bolton_buffer_received_data(const uint32_t len, const uint8_t *data)

@@ -34,10 +34,15 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "sl_bt_api.h"
+#include "sl_bt_ncp_host.h"
 
 #define BOLTON_UART_INSATNCE    USART1
 #define BOLTON_UART_HANDLE      huart1
 #define BOLTON_UART_IRQN        USART1_IRQn
+
+extern uint8_t bolton_usart_rx_byte;
+void sl_bt_on_event(sl_bt_msg_t *evt);
 
 // Receive function exposed to BGAPI
 int32_t sl_bt_api_rx(uint32_t dataLength, uint8_t* data);
@@ -48,6 +53,12 @@ void sl_bt_api_tx(uint32_t msg_len, uint8_t* msg_data);
 // Peek function exposed to BGAPI
 // Returns the number of received bytes in the Rx buffer
 int32_t sl_bt_api_peek_rx();
+
+// Initializes the boltON module and the BLE API
+bool sl_bolton_init();
+
+// Processes incoming events from the Bluetooth stack
+void sl_bolton_process();
 
 // Stores the bytes receive on UART in an internal buffer
 void sl_bolton_buffer_received_data(const uint32_t len, const uint8_t *data);

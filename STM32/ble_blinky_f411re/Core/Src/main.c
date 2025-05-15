@@ -22,8 +22,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include "sl_bt_api.h"
-#include "sl_bt_ncp_host.h"
 #include "sl_boltON.h"
 /* USER CODE END Includes */
 
@@ -75,9 +73,6 @@ static void MX_USART1_UART_Init(void);
 void sl_bt_on_event(sl_bt_msg_t *evt);
 static void ble_initialize_gatt_db();
 void send_button_state_notification();
-
-uint8_t usart_rx_byte;
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -118,10 +113,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   printf("boltON Blinky Example by Silicon Labs\n");
-  HAL_UART_Receive_IT(&huart1, &usart_rx_byte, 1);
   printf("Initializing BLE...\n");
-  sl_status_t sc = sl_bt_api_initialize_nonblock(sl_bt_api_tx, sl_bt_api_rx, sl_bt_api_peek_rx);
-  (void)sc;
+  bool res = sl_bolton_init();
+  assert(res);
 
   // Reset the BLE board
   sl_bt_system_reboot();
@@ -134,17 +128,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
     if (btn_state_changed) {
       btn_state_changed = false;
       send_button_state_notification();
     }
 
-    // Process incoming BLE events
-    sl_bt_msg_t event;
-    if (sl_bt_pop_event(&event) == SL_STATUS_OK) {
-      sl_bt_on_event(&event);
-    }
+    sl_bolton_process();
   }
   /* USER CODE END 3 */
 }
@@ -315,9 +304,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == BOLTON_UART_INSATNCE) {
-    sl_bolton_buffer_received_data(1, &usart_rx_byte);
+    sl_bolton_buffer_received_data(1, &bolton_usart_rx_byte);
     // Restart reception
-    HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &usart_rx_byte, 1);
+    HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &bolton_usart_rx_byte, 1);
   }
 }
 

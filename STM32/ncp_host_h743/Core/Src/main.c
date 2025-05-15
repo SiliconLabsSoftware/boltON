@@ -22,8 +22,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include "sl_bt_api.h"
-#include "sl_bt_ncp_host.h"
 #include "sl_boltON.h"
 
 /* USER CODE END Includes */
@@ -53,10 +51,8 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 
-// BoltON
-//UART_HandleTypeDef huart2;
-// USB
-//UART_HandleTypeDef huart3;
+// BoltON - huart2
+// USB - huart3
 
 // The advertising set handle allocated by the Bluetooth stack
 static uint8_t advertising_set_handle = 0xff;
@@ -65,7 +61,6 @@ static const uint8_t advertised_name[] = "boltON STM32";
 static uint16_t gattdb_session_id;
 static uint16_t generic_access_service_handle;
 static uint16_t device_name_characteristic_handle;
-uint8_t usart_rx_byte;
 
 /* USER CODE END PV */
 
@@ -123,12 +118,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   printf("boltON by Silicon Labs\n");
-  HAL_UART_Receive_IT(&huart2, &usart_rx_byte, 1);
   printf("Initializing BLE...\n");
-  sl_status_t sc = sl_bt_api_initialize_nonblock(sl_bt_api_tx, sl_bt_api_rx, sl_bt_api_peek_rx);
-  assert(sc == SL_STATUS_OK);
-  // Reset the BLE board
-  sl_bt_system_reboot();
+  bool res = sl_bolton_init();
+  assert(res);
 
   /* USER CODE END 2 */
 
@@ -146,11 +138,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // Process incoming BLE events
-    sl_bt_msg_t event;
-    if (sl_bt_pop_event(&event) == SL_STATUS_OK) {
-      sl_bt_on_event(&event);
-    }
+    sl_bolton_process();
   }
   /* USER CODE END 3 */
 }
@@ -315,9 +303,9 @@ static void MX_GPIO_Init(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == BOLTON_UART_INSATNCE) {
-    sl_bolton_buffer_received_data(1, &usart_rx_byte);
+    sl_bolton_buffer_received_data(1, &bolton_usart_rx_byte);
     // Restart reception
-    HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &usart_rx_byte, 1);
+    HAL_UART_Receive_IT(&BOLTON_UART_HANDLE, &bolton_usart_rx_byte, 1);
   }
 }
 
