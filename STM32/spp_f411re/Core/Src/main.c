@@ -64,7 +64,7 @@ static void ble_initialize_gatt_db();
 uint8_t advertising_set_handle = SL_BT_INVALID_ADVERTISING_SET_HANDLE;
 
 uint8_t usart2_rx_byte;
-RingBuffer uart2_rx_buf = { 0 };
+sl_ring_buffer uart2_rx_buf = { 0 };
 
 typedef enum {
   STATE_DISCONNECTED = 0,

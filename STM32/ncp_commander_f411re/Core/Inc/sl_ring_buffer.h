@@ -37,7 +37,7 @@ typedef struct {
   uint8_t buffer[BUFFER_SIZE];
   volatile uint16_t head;
   volatile uint16_t tail;
-} RingBuffer;
+} sl_ring_buffer;
 
-void sl_ringbuffer_write(RingBuffer* rb, uint8_t data);
-int sl_ringbuffer_read(RingBuffer* rb, uint8_t* data);
+void sl_ringbuffer_write(sl_ring_buffer* rb, uint8_t data);
+int sl_ringbuffer_read(sl_ring_buffer* rb, uint8_t* data);

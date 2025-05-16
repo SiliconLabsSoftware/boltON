@@ -30,7 +30,7 @@
 
 #include "sl_ring_buffer.h"
 
-void sl_ringbuffer_write(RingBuffer* rb, uint8_t data)
+void sl_ringbuffer_write(sl_ring_buffer* rb, uint8_t data)
 {
   uint16_t next = (rb->head + 1) % BUFFER_SIZE;
   if (next != rb->tail) {
@@ -39,7 +39,7 @@ void sl_ringbuffer_write(RingBuffer* rb, uint8_t data)
   }
 }
 
-int sl_ringbuffer_read(RingBuffer* rb, uint8_t* data)
+int sl_ringbuffer_read(sl_ring_buffer* rb, uint8_t* data)
 {
   if (rb->tail == rb->head) {
     return 0;

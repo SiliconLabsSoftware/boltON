@@ -56,8 +56,8 @@ static void MX_USART2_UART_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
-static RingBuffer uart1_rx_buf = { 0 };
-static RingBuffer uart2_rx_buf = { 0 };
+static sl_ring_buffer uart1_rx_buf = { 0 };
+static sl_ring_buffer uart2_rx_buf = { 0 };
 static uint8_t rx1_byte;
 static uint8_t rx2_byte;
 
