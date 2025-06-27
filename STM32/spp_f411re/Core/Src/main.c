@@ -146,7 +146,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  printf("boltON BLE Serial Port Profile by Silicon Labs\n");
+  printf("boltON by Silicon Labs - BLE Serial Port Profile\n");
   printf("Initializing BLE...\n");
   bool res = sl_bolton_init();
   assert(res);

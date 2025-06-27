@@ -119,7 +119,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  printf("boltON Blinky Example by Silicon Labs\n");
+  printf("boltON by Silicon Labs - Blinky\n");
   printf("Initializing BLE...\n");
   bool res = sl_bolton_init();
   assert(res);
