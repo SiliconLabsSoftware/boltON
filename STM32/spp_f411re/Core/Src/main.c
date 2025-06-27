@@ -147,8 +147,6 @@ int main(void)
   assert(res);
   // Initialize UART reception for the USB serial
   HAL_UART_Receive_IT(&huart2, &usart2_rx_byte, 1);
-  // Reset the BLE board
-  sl_bt_system_reboot();
 
   /* USER CODE END 2 */
 

@@ -111,8 +111,6 @@ int main(void)
   printf("Initializing BLE...\n");
   bool res = sl_bolton_init();
   assert(res);
-  // Reset the BLE board
-  sl_bt_system_reboot();
 
   /* USER CODE END 2 */
 

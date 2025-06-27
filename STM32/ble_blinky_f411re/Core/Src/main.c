@@ -117,9 +117,6 @@ int main(void)
   bool res = sl_bolton_init();
   assert(res);
 
-  // Reset the BLE board
-  sl_bt_system_reboot();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
