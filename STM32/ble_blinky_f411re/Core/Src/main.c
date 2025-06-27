@@ -38,10 +38,17 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
-#define LED_PORT      GPIOA
-#define LED_PIN       GPIO_PIN_5
+// LED on the STM kit
+#define LED_PORT  GPIOA
+#define LED_PIN   GPIO_PIN_5
+
+// Button on the STM kit
 #define BUTTON_PORT   GPIOC
 #define BUTTON_PIN    GPIO_PIN_13
+
+// LED on the boltON
+#define BOLTON_LED_PORT  GPIOC
+#define BOLTON_LED_PIN   GPIO_PIN_7
 
 /* USER CODE END PM */
 
@@ -260,6 +267,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
@@ -272,6 +282,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PC7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
@@ -318,8 +335,10 @@ void set_led_on(bool state)
 {
   if (state) {
     HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BOLTON_LED_PORT, BOLTON_LED_PIN, GPIO_PIN_SET);
   } else {
     HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(BOLTON_LED_PORT, BOLTON_LED_PIN, GPIO_PIN_RESET);
   }
 }
 

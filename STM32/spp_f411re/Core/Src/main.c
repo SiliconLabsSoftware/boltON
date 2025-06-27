@@ -39,8 +39,13 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+// LED on the STM kit
 #define LED_PORT  GPIOA
 #define LED_PIN   GPIO_PIN_5
+
+// LED on the boltON
+#define BOLTON_LED_PORT  GPIOC
+#define BOLTON_LED_PIN   GPIO_PIN_7
 
 /* USER CODE END PM */
 
@@ -302,6 +307,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -314,6 +322,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PC7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -458,6 +473,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       spp_print_stats(&spp_connection_stat_counter);
       spp_reset_state();
       HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(BOLTON_LED_PORT, BOLTON_LED_PIN, GPIO_PIN_RESET);
       // Generate data for advertising
       sc = sl_bt_legacy_advertiser_generate_data(advertising_set_handle,
                                                  sl_bt_advertiser_general_discoverable);
@@ -489,10 +505,12 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
             printf("Ready for SPP communication\r\n");
             printf("---------------------------\r\n");
             HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(BOLTON_LED_PORT, BOLTON_LED_PIN, GPIO_PIN_SET);
           } else {
             printf("SPP communication stopped\r\n");
             spp_main_state = STATE_CONNECTED;
             HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(BOLTON_LED_PORT, BOLTON_LED_PIN, GPIO_PIN_RESET);
           }
         }
       }

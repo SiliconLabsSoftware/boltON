@@ -39,8 +39,13 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+// LED on the STM kit
 #define LED_PORT  GPIOB
 #define LED_PIN   GPIO_PIN_0
+
+// LED on the boltON
+#define BOLTON_LED_PORT  GPIOD
+#define BOLTON_LED_PIN   GPIO_PIN_15
 
 /* USER CODE END PM */
 
@@ -283,6 +288,7 @@ static void MX_USART3_UART_Init(void)
  */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = { 0 };
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
@@ -292,6 +298,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -387,6 +403,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     case sl_bt_evt_connection_opened_id:
       printf("Connection opened\n");
       HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(BOLTON_LED_PORT, BOLTON_LED_PIN, GPIO_PIN_SET);
       break;
 
     // -------------------------------
@@ -394,6 +411,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     case sl_bt_evt_connection_closed_id:
       printf("Connection closed\n");
       HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(BOLTON_LED_PORT, BOLTON_LED_PIN, GPIO_PIN_RESET);
       // Generate data for advertising
       sc = sl_bt_legacy_advertiser_generate_data(advertising_set_handle,
                                                  sl_bt_advertiser_general_discoverable);
