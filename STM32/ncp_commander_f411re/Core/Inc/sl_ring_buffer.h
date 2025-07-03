@@ -31,7 +31,7 @@
 #include "stm32f4xx_hal.h"
 #include <string.h>
 
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 2048
 
 typedef struct {
   uint8_t buffer[BUFFER_SIZE];
