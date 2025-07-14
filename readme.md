@@ -24,6 +24,9 @@ The hardware is an open-source Arduino Uno shield form factor PCB, which can be 
  - UART TX pin selection (D8/TX/D1) (use a jumper to select between D8 and D1 as an UART TX pin)
    - Some host development kits have different UART mappings - this can be used to select an alternative UART mapping
 
+### Hardware design files
+
+The hardware design files can be found in the [Silicon Labs Open PCB Prototypes](https://github.com/SiliconLabsSoftware/open-pcb-prototypes/tree/main/boltON_extension_board) repository.
 
 ## Setting up your boltON hardware
 
