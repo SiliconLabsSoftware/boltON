@@ -1,6 +1,11 @@
 ![boltON](doc/bolton_logo_2_colorful.png) **by Silicon Labs**
 
-**boltON** is an expansion board for your development kits, which adds wireless functionality to them.
+Cut the cables. Keep the control.
+
+[![Latest release](https://img.shields.io/github/release/SiliconLabsSoftware/boltON)](https://github.com/SiliconLabsSoftware/boltON/releases/latest/)
+[![Latest release date](https://img.shields.io/github/release-date/SiliconLabsSoftware/boltON)](https://github.com/SiliconLabsSoftware/boltON/releases/latest/)
+
+**boltON™** is an expansion board for your development kits, which adds wireless functionality to them.
 
 The hardware is an open-source Arduino Uno shield form factor PCB, which can be bolted on top of your existing dev boards.
 
@@ -86,6 +91,20 @@ Example projects for STM32 boards can be found under the `STM32` folder. Each ex
  - BLE blinky (F411)
  - SPP (F411)
 
+### NXP Semiconductors
+
+Example projects for NXP boards can be found under the `NXP` folder. Each example is an NXP MCUXpresso project, which can be imported into the IDE.
+
+#### Boards
+ - [NXP FRDM-MCXA156](https://www.nxp.com/design/design-center/development-boards-and-designs/FRDM-MCXA156)
+   - Please select the `UART RX` pin as `D0` and the `UART TX` pin as `D1` on the boltON hardware when using this kit
+
+#### Examples
+ - NCP host
+ - NCP commander
+ - BLE blinky
+ - SPP
+
 ## Example overview
 
 ### Simplicity Connect app
@@ -117,3 +136,7 @@ This example allows the users to use the Silicon Labs [NCP Commander](https://do
 The Serial Port Profile (SPP) example allows the users to send data through BLE in a bidirectional way similar to UART.
 
 The example allows the hardware to connect to a web app running in the user's browser and exchange messages between with the hardware wirelessly.
+
+##
+
+##### Cut the cables. Keep the control. boltON™ your next idea.
