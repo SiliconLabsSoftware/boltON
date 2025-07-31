@@ -145,7 +145,8 @@ static bool sl_check_for_valid_message_in_buf()
   msg_length = SL_BT_MSG_LEN(header);
   if (msg_length > SL_BGAPI_MAX_PAYLOAD_SIZE) {
     // Consume the header start byte to invalidate the message
-    //(void)sl_bt_api_input(1, (uint8_t*)&header);
+    memmove((void *)rx_buf, (void *)&rx_buf[1], rx_buf_len);
+    rx_buf_len--;
     return false;
   }
   // check if we have enough bytes buffered for the payload

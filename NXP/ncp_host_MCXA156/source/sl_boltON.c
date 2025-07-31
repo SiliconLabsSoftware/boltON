@@ -132,10 +132,10 @@ static bool sl_check_for_valid_message_in_buf()
   // Check if it's a BT type event or response
   if (((header & 0xf8) != ( (uint32_t)(sl_bgapi_dev_type_bt) | (uint32_t)sl_bgapi_msg_type_evt)) && ((header & 0xf8) != (uint32_t)(sl_bgapi_dev_type_bt))) {
     // Consume the invalid header start byte
-    //HAL_NVIC_DisableIRQ(BOLTON_UART_IRQN);
+    __disable_irq();
     memmove((void *)rx_buf, (void *)&rx_buf[1], rx_buf_len);
     rx_buf_len--;
-    //HAL_NVIC_EnableIRQ(BOLTON_UART_IRQN);
+    __enable_irq();
     return false;
   }
   // peek the full header
@@ -147,7 +147,8 @@ static bool sl_check_for_valid_message_in_buf()
   msg_length = SL_BT_MSG_LEN(header);
   if (msg_length > SL_BGAPI_MAX_PAYLOAD_SIZE) {
     // Consume the header start byte to invalidate the message
-    //(void)sl_bt_api_input(1, (uint8_t*)&header);
+    memmove((void *)rx_buf, (void *)&rx_buf[1], rx_buf_len);
+    rx_buf_len--;
     return false;
   }
   // check if we have enough bytes buffered for the payload
