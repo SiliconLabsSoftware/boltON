@@ -82,6 +82,7 @@ Example projects for STM32 boards can be found under the `STM32` folder. Each ex
 
 #### Boards
  - [STM32 Nucleo F411RE](https://www.st.com/en/evaluation-tools/nucleo-f411re.html)
+   - Select the 3.3V host voltage jumper on the boltON hardware when using this kit
    - Please select the `UART RX` pin as `D2` and the `UART TX` pin as `D8` on the boltON hardware when using this kit
  - [STM32 Nucleo H743ZI2](https://www.st.com/en/evaluation-tools/nucleo-h743zi.html)
 
@@ -97,11 +98,44 @@ Example projects for NXP boards can be found under the `NXP` folder. Each exampl
 
 #### Boards
  - [NXP FRDM-MCXA156](https://www.nxp.com/design/design-center/development-boards-and-designs/FRDM-MCXA156)
+   - Select the 3.3V host voltage jumper on the boltON hardware when using this kit
    - Please select the `UART RX` pin as `D0` and the `UART TX` pin as `D1` on the boltON hardware when using this kit
 
 #### Examples
  - NCP host
  - NCP commander
+ - BLE blinky
+ - SPP
+
+### Arduino
+
+The boltON Arduino library can be found under the `arduino` folder. The folder contains an Arduino compatible library which can be imported into the Arduino IDE.
+
+#### Importing the library into the Arduino IDE
+
+ - Open the Arduino IDE
+ - On the top menu navigate to '*Sketch > Include Library > Add .ZIP Library*'
+ - Browse the included '*boltON.zip*' file from this repo's '*arduino*' folder
+ - The boltON library should now be imported into the Arduino IDE
+
+#### Boards
+
+The library should work on most Arduino boards out of the box which have at least two hardware Serial ports. Official testing has been done on the following:
+ - [Arduino Uno R4 (Minima / WiFi)](https://store.arduino.cc/pages/uno-r4) (Renesas RA4M1)
+   - ⚠️ Select the 5V host voltage jumper on the boltON hardware when using this kit
+   - Please select the `UART RX` pin as `D0` and the `UART TX` pin as `D1` on the boltON hardware when using this kit
+ - [Arduino Due](https://store.arduino.cc/products/arduino-due) (Atmel SAM3X8E)
+   - ⚠️ Select the 5V host voltage with a jumper on the boltON hardware when using this kit
+   - Please wire the Tx1 and Rx1 pins of the Due to the middle of the Rx/Tx selector header on the boltON kit after removing the jumpers
+ - [Arduino Nano 33 BLE (Sense) Rev2](https://store.arduino.cc/products/nano-33-ble-sense-rev2) (u-blox NINA-B306 - Nordic Semiconductor nRF52840)
+   - Select the 3.3V host voltage with a jumper on the boltON hardware when using this kit
+   - Please manually wire the power and Serial Rx/Tx pins of the Nano together with the boltON board - optionally wire D9 together for the LED
+ - [Arduino Nano RP2040 Connect](https://store.arduino.cc/products/arduino-nano-rp2040-connect) (Raspberry Pi RP2040)
+   - Select the 3.3V host voltage with a jumper on the boltON hardware when using this kit
+   - Please manually wire the power and Serial Rx/Tx pins of the Nano together with the boltON board - optionally wire D9 together for the LED
+
+#### Examples
+ - NCP host
  - BLE blinky
  - SPP
 
